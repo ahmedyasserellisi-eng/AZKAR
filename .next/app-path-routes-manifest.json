@@ -1,0 +1,9 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/azkar/[type]/page": "/azkar/[type]",
+  "/favorites/page": "/favorites",
+  "/page": "/",
+  "/reading/[type]/page": "/reading/[type]",
+  "/settings/page": "/settings"
+}

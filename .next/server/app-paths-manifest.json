@@ -1,0 +1,9 @@
+{
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/azkar/[type]/page": "app/azkar/[type]/page.js",
+  "/favorites/page": "app/favorites/page.js",
+  "/page": "app/page.js",
+  "/reading/[type]/page": "app/reading/[type]/page.js",
+  "/settings/page": "app/settings/page.js"
+}
