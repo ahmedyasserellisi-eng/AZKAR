@@ -7,6 +7,8 @@ export type Dhikr = {
   text: string;
   repetitions: number;
   source: string;
+  virtue?: string;
+  virtueSource?: string;
 };
 
 export type ProgressState = Record<string, number>;
