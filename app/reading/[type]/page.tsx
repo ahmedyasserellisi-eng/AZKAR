@@ -140,7 +140,7 @@ export default function ReadingPage() {
   }
 
   /**
-   * تكبير مؤقت أثناء القراءة.
+   * تكبير مؤقت أثناء القراءة فقط.
    * لا يغيّر الحجم المحفوظ في الإعدادات.
    */
   function increaseFont() {
@@ -192,8 +192,6 @@ export default function ReadingPage() {
               setDoneMessage(false);
               setCount(0);
               setShowVirtue(false);
-
-              // يبدأ من الإعداد المحفوظ مرة أخرى.
               setScale(getFontScale());
             }}
             className="focus-ring flex-1 rounded-2xl bg-[var(--primary)] px-4 py-3 font-semibold text-white"
@@ -276,9 +274,7 @@ export default function ReadingPage() {
                   : "text-[var(--muted)]"
               }`}
               aria-label="حفظ في المفضلة"
-              aria-pressed={favorites.includes(
-                item.id
-              )}
+              aria-pressed={favorites.includes(item.id)}
             >
               <StarIcon
                 filled={favorites.includes(item.id)}
@@ -303,6 +299,7 @@ export default function ReadingPage() {
               borderColor: "var(--border)",
             }}
           >
+            {/* Source */}
             <div className="text-sm leading-7 text-[var(--muted)]">
               <span className="font-semibold text-[var(--foreground)]">
                 المصدر:
@@ -310,6 +307,7 @@ export default function ReadingPage() {
               {item.source}
             </div>
 
+            {/* Virtue */}
             {item.virtue && (
               <div className="mt-4">
                 <button
@@ -321,12 +319,12 @@ export default function ReadingPage() {
                   }
                   className="focus-ring flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-right transition"
                   style={{
-                    borderColor:
-                      "var(--border)",
+                    borderColor: "var(--border)",
                     background:
                       "var(--surface-soft)",
                   }}
                   aria-expanded={showVirtue}
+                  aria-controls="dhikr-virtue"
                 >
                   <span className="flex items-center gap-2 font-semibold text-[var(--primary)]">
                     <span
@@ -335,6 +333,7 @@ export default function ReadingPage() {
                     >
                       ✨
                     </span>
+
                     <span>فضل الذكر</span>
                   </span>
 
@@ -352,17 +351,25 @@ export default function ReadingPage() {
 
                 {showVirtue && (
                   <div
+                    id="dhikr-virtue"
                     className="mt-2 rounded-2xl border p-4"
                     style={{
-                      borderColor:
-                        "var(--border)",
-                      background:
-                        "var(--surface)",
+                      borderColor: "var(--border)",
+                      background: "var(--surface)",
                     }}
                   >
                     <p className="text-sm leading-7 text-[var(--muted)]">
                       {item.virtue}
                     </p>
+
+                    {item.virtueSource && (
+                      <div className="mt-3 border-t pt-3 text-xs leading-6 text-[var(--muted)]">
+                        <span className="font-semibold text-[var(--foreground)]">
+                          مصدر الفضل:
+                        </span>{" "}
+                        {item.virtueSource}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
