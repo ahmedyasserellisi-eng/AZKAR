@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f9f6;
+  --surface: #ffffff;
+  --surface-soft: #f1f4f1;
+  --foreground: #18201b;
+  --muted: #68736c;
+  --primary: #2f6b4f;
+  --primary-dark: #24543d;
+  --border: #e5e9e5;
+  --success: #4f8a65;
+}
+
+html.dark {
+  --background: #101512;
+  --surface: #171d19;
+  --surface-soft: #1d2520;
+  --foreground: #f2f5f2;
+  --muted: #a5aea8;
+  --primary: #83b397;
+  --primary-dark: #6e9c7f;
+  --border: #28312c;
+  --success: #83b397;
+}
+
+* { box-sizing: border-box; }
+html { min-height: 100%; background: var(--background); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, "Noto Sans Arabic", sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+button, a { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+::selection { background: color-mix(in srgb, var(--primary) 22%, transparent); }
+
+.azkar-shell { min-height: 100vh; padding-bottom: 86px; }
+.container-mobile { width: min(100%, 720px); margin: 0 auto; padding: 0 20px; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: 0 12px 35px rgba(24, 32, 27, 0.035);
+}
+.dark .card { box-shadow: none; }
+.soft { background: var(--surface-soft); }
+.progress-track { background: var(--surface-soft); }
+.progress-fill { background: var(--primary); transition: width 350ms ease; }
+.focus-ring:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 35%, transparent); outline-offset: 3px; }
+
+@media (min-width: 768px) {
+  .azkar-shell { padding-bottom: 24px; }
+  .container-mobile { padding: 0 28px; }
+}
