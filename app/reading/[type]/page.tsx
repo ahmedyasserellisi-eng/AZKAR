@@ -1,314 +1,325 @@
-"use client";
+import type { AzkarType, Dhikr } from "./types";
 
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { useParams, useSearchParams, useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  ArrowRight,
-  CheckIcon,
-  StarIcon,
-} from "../../components/Icons";
-import { getAdhkar } from "@/lib/adhkar";
-import {
-  getFavorites,
-  getFontScale,
-  getProgress,
-  setFavorites,
-  setProgress,
-} from "@/lib/storage";
-import type { AzkarType } from "@/lib/types";
+/**
+ * أذكار الصباح والمساء — باب 27 من حصن المسلم.
+ *
+ * نضيف "virtue" فقط عندما يذكر المصدر فضلًا خاصًا صراحةً.
+ * لا نضيف فضائل مستنبطة أو غير موثقة.
+ *
+ * المصدر الأساسي:
+ * Sunnah.com — Hisn al-Muslim — Chapter 27
+ */
 
-const MIN_SCALE = 0.9;
-const MAX_SCALE = 1.25;
-const STEP = 0.05;
-const BASE_FONT_SIZE = 23;
+type Entry = {
+  id: string;
+  text: string;
+  repetitions: number;
+  source: string;
+  reference: string;
+  virtue?: string;
+};
 
-export default function ReadingPage() {
-  const params = useParams<{ type: string }>();
-  const router = useRouter();
-  const search = useSearchParams();
+/**
+ * امتداد داخلي لـ Dhikr لإضافة فضل الذكر
+ * بدون الحاجة لتعديل types.ts في هذه المرحلة.
+ */
+type AppDhikr = Dhikr & {
+  virtue?: string;
+};
 
-  const type = params.type as AzkarType;
-  const items = getAdhkar(
-    type === "evening" ? "evening" : "morning"
-  );
+const morning: Entry[] = [
+  {
+    id: "75",
+    text: "أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ ۝ اللَّهُ لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ، لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ، لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ، مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ، يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ، وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ، وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ، وَلَا يَئُودُهُ حِفْظُهُمَا، وَهُوَ الْعَلِيُّ الْعَظِيمُ",
+    repetitions: 1,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 75 — آية الكرسي، البقرة 255",
+    virtue:
+      "من قالها حين يصبح حُفظ من الجن حتى يمسي، ومن قالها حين يمسي حُفظ منهم حتى يصبح.",
+  },
+  {
+    id: "76",
+    text: "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ قُلْ هُوَ اللَّهُ أَحَدٌ ۝ اللَّهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُولَدْ ۝ وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ\n\nبِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ۝ مِنْ شَرِّ مَا خَلَقَ ۝ وَمِنْ شَرِّ غَاسِقٍ إِذَا وَقَبَ ۝ وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۝ وَمِنْ شَرِّ حَاسِدٍ إِذَا حَسَدَ\n\nبِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ قُلْ أَعُوذُ بِرَبِّ النَّاسِ ۝ مَلِكِ النَّاسِ ۝ إِلَهِ النَّاسِ ۝ مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۝ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ۝ مِنَ الْجِنَّةِ وَالنَّاسِ",
+    repetitions: 3,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 76 — الإخلاص والفلق والناس",
+    virtue:
+      "من قرأ الإخلاص والفلق والناس ثلاث مرات حين يصبح وحين يمسي كفته من كل شيء.",
+  },
+  {
+    id: "77",
+    text: "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذَا الْيَوْمِ وَخَيْرَ مَا بَعْدَهُ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَذَا الْيَوْمِ وَشَرِّ مَا بَعْدَهُ، رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَسُوءِ الْكِبَرِ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ",
+    repetitions: 1,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 77",
+  },
+  {
+    id: "78",
+    text: "اللَّهُمَّ بِكَ أَصْبَحْنَا وَبِكَ أَمْسَيْنَا وَبِكَ نَحْيَا وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُورُ",
+    repetitions: 1,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 78",
+  },
+  {
+    id: "79",
+    text: "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ",
+    repetitions: 1,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 79 — سيد الاستغفار",
+    virtue:
+      "من قاله موقنًا به صباحًا ثم مات في يومه دخل الجنة، ومن قاله موقنًا به مساءً ثم مات في ليلته دخل الجنة.",
+  },
+  {
+    id: "80",
+    text: "اللَّهُمَّ إِنِّي أَصْبَحْتُ أُشْهِدُكَ، وَأُشْهِدُ حَمَلَةَ عَرْشِكَ، وَمَلَائِكَتَكَ، وَجَمِيعَ خَلْقِكَ، أَنَّكَ أَنْتَ اللَّهُ لَا إِلَهَ إِلَّا أَنْتَ وَحْدَكَ لَا شَرِيكَ لَكَ، وَأَنَّ مُحَمَّدًا عَبْدُكَ وَرَسُولُكَ",
+    repetitions: 4,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 80",
+    virtue:
+      "من قاله أربع مرات صباحًا أو مساءً أعتقه الله من النار.",
+  },
+  {
+    id: "81",
+    text: "اللَّهُمَّ مَا أَصْبَحَ بِي مِنْ نِعْمَةٍ أَوْ بِأَحَدٍ مِنْ خَلْقِكَ، فَمِنْكَ وَحْدَكَ لَا شَرِيكَ لَكَ، فَلَكَ الْحَمْدُ وَلَكَ الشُّكْرُ",
+    repetitions: 1,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 81",
+    virtue:
+      "من قاله حين يصبح فقد أدى شكر يومه، ومن قاله حين يمسي فقد أدى شكر ليلته.",
+  },
+  {
+    id: "82",
+    text: "اللَّهُمَّ عَافِنِي فِي بَدَنِي، اللَّهُمَّ عَافِنِي فِي سَمْعِي، اللَّهُمَّ عَافِنِي فِي بَصَرِي، لَا إِلَهَ إِلَّا أَنْتَ. اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْكُفْرِ وَالْفَقْرِ، وَأَعُوذُ بِكَ مِنْ عَذَابِ الْقَبْرِ، لَا إِلَهَ إِلَّا أَنْتَ",
+    repetitions: 3,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 82",
+  },
+  {
+    id: "83",
+    text: "حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ، عَلَيْهِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ",
+    repetitions: 7,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 83",
+    virtue:
+      "من قاله سبع مرات صباحًا أو مساءً كفاه الله ما أهمه من أمر الدنيا والآخرة.",
+  },
+  {
+    id: "84",
+    text: "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي الدُّنْيَا وَالْآخِرَةِ، اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي دِينِي وَدُنْيَايَ وَأَهْلِي وَمَالِي، اللَّهُمَّ اسْتُرْ عَوْرَاتِي وَآمِنْ رَوْعَاتِي، اللَّهُمَّ احْفَظْنِي مِنْ بَيْنِ يَدَيَّ وَمِنْ خَلْفِي وَعَنْ يَمِينِي وَعَنْ شِمَالِي وَمِنْ فَوْقِي، وَأَعُوذُ بِعَظَمَتِكَ أَنْ أُغْتَالَ مِنْ تَحْتِي",
+    repetitions: 1,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 84",
+  },
+  {
+    id: "85",
+    text: "اللَّهُمَّ عَالِمَ الْغَيْبِ وَالشَّهَادَةِ، فَاطِرَ السَّمَاوَاتِ وَالْأَرْضِ، رَبَّ كُلِّ شَيْءٍ وَمَلِيكَهُ، أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا أَنْتَ، أَعُوذُ بِكَ مِنْ شَرِّ نَفْسِي، وَمِنْ شَرِّ الشَّيْطَانِ وَشِرْكِهِ، وَأَنْ أَقْتَرِفَ عَلَى نَفْسِي سُوءًا أَوْ أَجُرَّهُ إِلَى مُسْلِمٍ",
+    repetitions: 1,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 85",
+  },
+  {
+    id: "86",
+    text: "بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ",
+    repetitions: 3,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 86",
+    virtue:
+      "من قاله ثلاث مرات صباحًا لم يصبه بلاء حتى يمسي، ومن قاله ثلاث مرات مساءً لم يصبه بلاء حتى يصبح.",
+  },
+  {
+    id: "87",
+    text: "رَضِيتُ بِاللَّهِ رَبًّا، وَبِالْإِسْلَامِ دِينًا، وَبِمُحَمَّدٍ نَبِيًّا",
+    repetitions: 3,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 87",
+    virtue:
+      "من قاله ثلاث مرات صباحًا أو مساءً كان حقًا على الله أن يرضيه يوم القيامة.",
+  },
+  {
+    id: "88",
+    text: "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ، أَصْلِحْ لِي شَأْنِي كُلَّهُ، وَلَا تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ",
+    repetitions: 1,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 88",
+  },
+  {
+    id: "89",
+    text: "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ رَبِّ الْعَالَمِينَ، اللَّهُمَّ إِنِّي أَسْأَلُكَ خَيْرَ هَذَا الْيَوْمِ: فَتْحَهُ وَنَصْرَهُ وَنُورَهُ وَبَرَكَتَهُ وَهُدَاهُ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِيهِ وَشَرِّ مَا بَعْدَهُ",
+    repetitions: 1,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 89",
+  },
+  {
+    id: "90",
+    text: "أَصْبَحْنَا عَلَى فِطْرَةِ الْإِسْلَامِ، وَعَلَى كَلِمَةِ الْإِخْلَاصِ، وَعَلَى دِينِ نَبِيِّنَا مُحَمَّدٍ، وَعَلَى مِلَّةِ أَبِينَا إِبْرَاهِيمَ، حَنِيفًا مُسْلِمًا وَمَا كَانَ مِنَ الْمُشْرِكِينَ",
+    repetitions: 1,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 90",
+  },
+  {
+    id: "91",
+    text: "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ",
+    repetitions: 100,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 91",
+    virtue:
+      "من قاله مائة مرة صباحًا ومساءً لم يأت أحد يوم القيامة بأفضل مما جاء به إلا أحد قال مثل ما قال أو زاد عليه.",
+  },
+  {
+    id: "92",
+    text: "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+    repetitions: 10,
+    source: "حصن المسلم",
+    reference:
+      "Hisn al-Muslim 92 — عشر مرات، ومرة واحدة عند الكسل وفق المصدر",
+    virtue:
+      "عشر مرات صباحًا أو مساءً تكتب له حسنات، وتمحى عنه سيئات، ويكون له أجر عتق رقبة، ويُحفظ من الشيطان؛ وله تفصيل آخر في المصدر عند قولها مرة واحدة.",
+  },
+  {
+    id: "93",
+    text: "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+    repetitions: 100,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 93 — مائة مرة إذا أصبح",
+    virtue:
+      "من قاله مائة مرة في اليوم كان له أجر عتق عشر رقاب، وكتبت له مائة حسنة، ومُحيت عنه مائة سيئة، وحُفظ من الشيطان حتى يمسي.",
+  },
+  {
+    id: "94",
+    text: "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ",
+    repetitions: 3,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 94 — إذا أصبح",
+  },
+  {
+    id: "95",
+    text: "اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْمًا نَافِعًا، وَرِزْقًا طَيِّبًا، وَعَمَلًا مُتَقَبَّلًا",
+    repetitions: 1,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 95 — إذا أصبح",
+  },
+  {
+    id: "98",
+    text: "اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ",
+    repetitions: 10,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 98",
+    virtue:
+      "من صلى على النبي ﷺ عشر مرات صباحًا وعشر مرات مساءً نال شفاعته يوم القيامة.",
+  },
+];
 
-  const initial = Math.max(
-    0,
-    Math.min(items.length - 1, Number(search.get("start") ?? 0))
-  );
+const evening: Entry[] = [
+  {
+    ...morning[0],
+    id: "75e",
+  },
+  {
+    ...morning[1],
+    id: "76e",
+  },
+  {
+    ...morning[2],
+    id: "77e",
+    text: "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذِهِ اللَّيْلَةِ وَخَيْرَ مَا بَعْدَهَا، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَذِهِ اللَّيْلَةِ وَشَرِّ مَا بَعْدَهَا، رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَسُوءِ الْكِبَرِ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ",
+  },
+  {
+    ...morning[3],
+    id: "78e",
+    text: "اللَّهُمَّ بِكَ أَمْسَيْنَا وَبِكَ أَصْبَحْنَا وَبِكَ نَحْيَا وَبِكَ نَمُوتُ وَإِلَيْكَ الْمَصِيرُ",
+  },
+  {
+    ...morning[4],
+    id: "79e",
+  },
+  {
+    ...morning[5],
+    id: "80e",
+    text: "اللَّهُمَّ إِنِّي أَمْسَيْتُ أُشْهِدُكَ، وَأُشْهِدُ حَمَلَةَ عَرْشِكَ، وَمَلَائِكَتَكَ، وَجَمِيعَ خَلْقِكَ، أَنَّكَ أَنْتَ اللَّهُ لَا إِلَهَ إِلَّا أَنْتَ وَحْدَكَ لَا شَرِيكَ لَكَ، وَأَنَّ مُحَمَّدًا عَبْدُكَ وَرَسُولُكَ",
+  },
+  {
+    ...morning[6],
+    id: "81e",
+    text: "اللَّهُمَّ مَا أَمْسَى بِي مِنْ نِعْمَةٍ أَوْ بِأَحَدٍ مِنْ خَلْقِكَ، فَمِنْكَ وَحْدَكَ لَا شَرِيكَ لَكَ، فَلَكَ الْحَمْدُ وَلَكَ الشُّكْرُ",
+  },
+  {
+    ...morning[7],
+    id: "82e",
+  },
+  {
+    ...morning[8],
+    id: "83e",
+  },
+  {
+    ...morning[9],
+    id: "84e",
+  },
+  {
+    ...morning[10],
+    id: "85e",
+  },
+  {
+    ...morning[11],
+    id: "86e",
+  },
+  {
+    ...morning[12],
+    id: "87e",
+  },
+  {
+    ...morning[13],
+    id: "88e",
+  },
+  {
+    ...morning[14],
+    id: "89e",
+    text: "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ رَبِّ الْعَالَمِينَ، اللَّهُمَّ إِنِّي أَسْأَلُكَ خَيْرَ هَذِهِ اللَّيْلَةِ: فَتْحَهَا وَنَصْرَهَا وَنُورَهَا وَبَرَكَتَهَا وَهُدَاهَا، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِيهَا وَشَرِّ مَا بَعْدَهَا",
+  },
+  {
+    ...morning[15],
+    id: "90e",
+    text: "أَمْسَيْنَا عَلَى فِطْرَةِ الْإِسْلَامِ، وَعَلَى كَلِمَةِ الْإِخْلَاصِ، وَعَلَى دِينِ نَبِيِّنَا مُحَمَّدٍ، وَعَلَى مِلَّةِ أَبِينَا إِبْرَاهِيمَ، حَنِيفًا مُسْلِمًا وَمَا كَانَ مِنَ الْمُشْرِكِينَ",
+  },
+  {
+    ...morning[16],
+    id: "91e",
+  },
+  {
+    ...morning[17],
+    id: "92e",
+  },
+  {
+    id: "97",
+    text: "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ",
+    repetitions: 3,
+    source: "حصن المسلم",
+    reference: "Hisn al-Muslim 97 — ثلاث مرات إذا أمسى",
+    virtue:
+      "من قاله ثلاث مرات حين يمسي حُفظ من هوامّ تلك الليلة.",
+  },
+  {
+    ...morning[21],
+    id: "98e",
+  },
+];
 
-  const [index, setIndex] = useState(initial);
-  const [count, setCount] = useState(0);
-  const [favorites, setFavs] = useState<string[]>([]);
-  const [scale, setScale] = useState(1);
-  const [doneMessage, setDoneMessage] = useState(false);
+function toDhikr(type: AzkarType, items: Entry[]): AppDhikr[] {
+  return items.map((item, index) => ({
+    id: `${type}-${item.id}`,
+    type,
+    order: index + 1,
+    text: item.text,
+    repetitions: item.repetitions,
+    source: `${item.source} — ${item.reference}`,
+    virtue: item.virtue,
+  }));
+}
 
-  const item = items[index];
+export const adhkar: Record<AzkarType, AppDhikr[]> = {
+  morning: toDhikr("morning", morning),
+  evening: toDhikr("evening", evening),
+};
 
-  const completedUnits = useMemo(() => {
-    const progress = getProgress();
-
-    return items.reduce(
-      (sum, currentItem) =>
-        sum +
-        Math.min(
-          progress[currentItem.id] ?? 0,
-          currentItem.repetitions
-        ),
-      0
-    );
-  }, [items, doneMessage, index]);
-
-  const totalUnits = useMemo(
-    () =>
-      items.reduce(
-        (sum, currentItem) => sum + currentItem.repetitions,
-        0
-      ),
-    [items]
-  );
-
-  const percent =
-    totalUnits > 0
-      ? Math.round((completedUnits / totalUnits) * 100)
-      : 0;
-
-  useEffect(() => {
-    setFavs(getFavorites());
-
-    // يبدأ بحجم الخط المحفوظ في الإعدادات.
-    // التكبير أثناء القراءة بعد ذلك يكون مؤقتًا فقط.
-    setScale(getFontScale());
-
-    const progress = getProgress();
-    setCount(
-      Math.min(
-        progress[item.id] ?? 0,
-        item.repetitions
-      )
-    );
-  }, [item]);
-
-  if (!item) return null;
-
-  function toggleFavorite() {
-    const next = favorites.includes(item.id)
-      ? favorites.filter((id) => id !== item.id)
-      : [...favorites, item.id];
-
-    setFavs(next);
-    setFavorites(next);
-  }
-
-  function markDone() {
-    const nextCount = count + 1;
-    const progress = getProgress();
-
-    progress[item.id] = Math.min(
-      nextCount,
-      item.repetitions
-    );
-
-    setProgress(progress);
-
-    if (nextCount < item.repetitions) {
-      setCount(nextCount);
-      return;
-    }
-
-    if (index === items.length - 1) {
-      setDoneMessage(true);
-      return;
-    }
-
-    setIndex(index + 1);
-    setCount(0);
-  }
-
-  function previous() {
-    if (index > 0) {
-      setIndex(index - 1);
-    }
-  }
-
-  // تكبير مؤقت أثناء القراءة فقط.
-  // لا يتم تعديل القيمة المحفوظة في localStorage.
-  function increaseReadingFont() {
-    setScale((current) =>
-      Math.min(
-        MAX_SCALE,
-        Number((current + STEP).toFixed(2))
-      )
-    );
-  }
-
-  const readingFontSize = BASE_FONT_SIZE * scale;
-  const canIncreaseFont = scale < MAX_SCALE;
-
-  if (doneMessage) {
-    return (
-      <div className="container-mobile flex min-h-[80vh] flex-col items-center justify-center text-center">
-        <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--primary)] text-white">
-          <CheckIcon size={34} />
-        </div>
-
-        <p className="mb-2 text-sm text-[var(--muted)]">
-          ما شاء الله 🤍
-        </p>
-
-        <h1 className="text-3xl font-bold">
-          أتممت أذكار{" "}
-          {type === "morning" ? "الصباح" : "المساء"}
-        </h1>
-
-        <p className="mt-3 max-w-sm leading-8 text-[var(--muted)]">
-          الحمد لله الذي أعانك على ذكره.
-        </p>
-
-        <div className="mt-7 flex w-full max-w-sm gap-3">
-          <Link
-            href="/"
-            className="focus-ring flex-1 rounded-2xl border px-4 py-3 text-center"
-            style={{ borderColor: "var(--border)" }}
-          >
-            الرئيسية
-          </Link>
-
-          <button
-            onClick={() => {
-              setIndex(0);
-              setDoneMessage(false);
-              setCount(0);
-              setScale(getFontScale());
-            }}
-            className="focus-ring flex-1 rounded-2xl bg-[var(--primary)] px-4 py-3 font-semibold text-white"
-          >
-            مرة أخرى
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-[var(--background)]">
-      <div className="container-mobile pt-5">
-        {/* Header */}
-        <div className="mb-5 flex items-center justify-between">
-          <button
-            onClick={() => router.back()}
-            className="focus-ring rounded-2xl p-2 text-[var(--muted)]"
-            aria-label="رجوع"
-          >
-            <ArrowLeft />
-          </button>
-
-          <div className="text-center">
-            <div className="text-sm text-[var(--muted)]">
-              أذكار{" "}
-              {type === "morning" ? "الصباح" : "المساء"}
-            </div>
-
-            <div className="mt-1 font-semibold">
-              {index + 1} / {items.length}
-            </div>
-          </div>
-
-          {/* تكبير فقط أثناء القراءة */}
-          <button
-            onClick={increaseReadingFont}
-            disabled={!canIncreaseFont}
-            className="focus-ring rounded-2xl border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
-            style={{ borderColor: "var(--border)" }}
-            aria-label="تكبير النص"
-          >
-            A+
-          </button>
-        </div>
-
-        {/* Progress */}
-        <div className="mb-8 h-1.5 overflow-hidden rounded-full progress-track">
-          <div
-            className="progress-fill h-full rounded-full"
-            style={{ width: `${percent}%` }}
-          />
-        </div>
-
-        {/* Dhikr */}
-        <article className="card min-h-[58vh] p-6 sm:p-10">
-          <div className="mb-8 flex items-center justify-between">
-            <span className="rounded-full soft px-3 py-1 text-xs text-[var(--muted)]">
-              التكرار {count + 1} / {item.repetitions}
-            </span>
-
-            <button
-              onClick={toggleFavorite}
-              className={`focus-ring rounded-full p-2 ${
-                favorites.includes(item.id)
-                  ? "text-[var(--primary)]"
-                  : "text-[var(--muted)]"
-              }`}
-              aria-label="حفظ في المفضلة"
-            >
-              <StarIcon filled={favorites.includes(item.id)} />
-            </button>
-          </div>
-
-          <p
-            style={{
-              fontSize: `${readingFontSize}px`,
-            }}
-            className="leading-[2.25] tracking-[0.01em]"
-          >
-            {item.text}
-          </p>
-
-          <div
-            className="mt-10 border-t pt-5 text-sm leading-7 text-[var(--muted)]"
-            style={{ borderColor: "var(--border)" }}
-          >
-            <span className="font-semibold text-[var(--foreground)]">
-              المصدر:
-            </span>{" "}
-            {item.source}
-          </div>
-        </article>
-
-        {/* Controls */}
-        <div className="mt-5 flex items-center justify-between gap-3">
-          <button
-            onClick={previous}
-            disabled={index === 0}
-            className="focus-ring rounded-2xl border p-4 text-[var(--muted)] disabled:opacity-35"
-            style={{ borderColor: "var(--border)" }}
-            aria-label="السابق"
-          >
-            <ArrowRight />
-          </button>
-
-          <button
-            onClick={markDone}
-            className="focus-ring flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[var(--primary)] px-5 py-4 font-semibold text-white shadow-lg shadow-black/5"
-          >
-            <CheckIcon />
-
-            {count + 1 >= item.repetitions
-              ? "تم"
-              : "تم — التالي"}
-          </button>
-
-          <Link
-            href={`/azkar/${type}`}
-            className="focus-ring rounded-2xl border p-4 text-[var(--muted)]"
-            style={{ borderColor: "var(--border)" }}
-            aria-label="قائمة الأذكار"
-          >
-            <ArrowLeft />
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
+export function getAdhkar(type: AzkarType): AppDhikr[] {
+  return adhkar[type];
 }
