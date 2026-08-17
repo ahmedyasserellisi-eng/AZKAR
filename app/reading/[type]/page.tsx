@@ -1,13 +1,11 @@
 import type { AzkarType, Dhikr } from "./types";
 
 /**
- * أذكار الصباح والمساء — باب 27 من حصن المسلم.
+ * Canonical morning/evening set based on Hisn al-Muslim, chapter 27
+ * (Hisn al-Muslim 75–98). Morning/evening wording is separated where
+ * the source explicitly changes the wording by time of day.
  *
- * نضيف "virtue" فقط عندما يذكر المصدر فضلًا خاصًا صراحةً.
- * لا نضيف فضائل مستنبطة أو غير موثقة.
- *
- * المصدر الأساسي:
- * Sunnah.com — Hisn al-Muslim — Chapter 27
+ * Source: Sunnah.com — Hisn al-Muslim, chapter 27.
  */
 
 type Entry = {
@@ -16,15 +14,6 @@ type Entry = {
   repetitions: number;
   source: string;
   reference: string;
-  virtue?: string;
-};
-
-/**
- * امتداد داخلي لـ Dhikr لإضافة فضل الذكر
- * بدون الحاجة لتعديل types.ts في هذه المرحلة.
- */
-type AppDhikr = Dhikr & {
-  virtue?: string;
 };
 
 const morning: Entry[] = [
@@ -34,8 +23,6 @@ const morning: Entry[] = [
     repetitions: 1,
     source: "حصن المسلم",
     reference: "Hisn al-Muslim 75 — آية الكرسي، البقرة 255",
-    virtue:
-      "من قالها حين يصبح حُفظ من الجن حتى يمسي، ومن قالها حين يمسي حُفظ منهم حتى يصبح.",
   },
   {
     id: "76",
@@ -43,8 +30,6 @@ const morning: Entry[] = [
     repetitions: 3,
     source: "حصن المسلم",
     reference: "Hisn al-Muslim 76 — الإخلاص والفلق والناس",
-    virtue:
-      "من قرأ الإخلاص والفلق والناس ثلاث مرات حين يصبح وحين يمسي كفته من كل شيء.",
   },
   {
     id: "77",
@@ -66,8 +51,6 @@ const morning: Entry[] = [
     repetitions: 1,
     source: "حصن المسلم",
     reference: "Hisn al-Muslim 79 — سيد الاستغفار",
-    virtue:
-      "من قاله موقنًا به صباحًا ثم مات في يومه دخل الجنة، ومن قاله موقنًا به مساءً ثم مات في ليلته دخل الجنة.",
   },
   {
     id: "80",
@@ -75,8 +58,6 @@ const morning: Entry[] = [
     repetitions: 4,
     source: "حصن المسلم",
     reference: "Hisn al-Muslim 80",
-    virtue:
-      "من قاله أربع مرات صباحًا أو مساءً أعتقه الله من النار.",
   },
   {
     id: "81",
@@ -84,8 +65,6 @@ const morning: Entry[] = [
     repetitions: 1,
     source: "حصن المسلم",
     reference: "Hisn al-Muslim 81",
-    virtue:
-      "من قاله حين يصبح فقد أدى شكر يومه، ومن قاله حين يمسي فقد أدى شكر ليلته.",
   },
   {
     id: "82",
@@ -100,8 +79,6 @@ const morning: Entry[] = [
     repetitions: 7,
     source: "حصن المسلم",
     reference: "Hisn al-Muslim 83",
-    virtue:
-      "من قاله سبع مرات صباحًا أو مساءً كفاه الله ما أهمه من أمر الدنيا والآخرة.",
   },
   {
     id: "84",
@@ -123,8 +100,6 @@ const morning: Entry[] = [
     repetitions: 3,
     source: "حصن المسلم",
     reference: "Hisn al-Muslim 86",
-    virtue:
-      "من قاله ثلاث مرات صباحًا لم يصبه بلاء حتى يمسي، ومن قاله ثلاث مرات مساءً لم يصبه بلاء حتى يصبح.",
   },
   {
     id: "87",
@@ -132,8 +107,6 @@ const morning: Entry[] = [
     repetitions: 3,
     source: "حصن المسلم",
     reference: "Hisn al-Muslim 87",
-    virtue:
-      "من قاله ثلاث مرات صباحًا أو مساءً كان حقًا على الله أن يرضيه يوم القيامة.",
   },
   {
     id: "88",
@@ -162,27 +135,20 @@ const morning: Entry[] = [
     repetitions: 100,
     source: "حصن المسلم",
     reference: "Hisn al-Muslim 91",
-    virtue:
-      "من قاله مائة مرة صباحًا ومساءً لم يأت أحد يوم القيامة بأفضل مما جاء به إلا أحد قال مثل ما قال أو زاد عليه.",
   },
   {
     id: "92",
     text: "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
     repetitions: 10,
     source: "حصن المسلم",
-    reference:
-      "Hisn al-Muslim 92 — عشر مرات، ومرة واحدة عند الكسل وفق المصدر",
-    virtue:
-      "عشر مرات صباحًا أو مساءً تكتب له حسنات، وتمحى عنه سيئات، ويكون له أجر عتق رقبة، ويُحفظ من الشيطان؛ وله تفصيل آخر في المصدر عند قولها مرة واحدة.",
+    reference: "Hisn al-Muslim 92 — ويجوز مرة عند الكسل وفق المصدر",
   },
   {
     id: "93",
     text: "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
     repetitions: 100,
     source: "حصن المسلم",
-    reference: "Hisn al-Muslim 93 — مائة مرة إذا أصبح",
-    virtue:
-      "من قاله مائة مرة في اليوم كان له أجر عتق عشر رقاب، وكتبت له مائة حسنة، ومُحيت عنه مائة سيئة، وحُفظ من الشيطان حتى يمسي.",
+    reference: "Hisn al-Muslim 93 — إذا أصبح",
   },
   {
     id: "94",
@@ -204,20 +170,12 @@ const morning: Entry[] = [
     repetitions: 10,
     source: "حصن المسلم",
     reference: "Hisn al-Muslim 98",
-    virtue:
-      "من صلى على النبي ﷺ عشر مرات صباحًا وعشر مرات مساءً نال شفاعته يوم القيامة.",
   },
 ];
 
 const evening: Entry[] = [
-  {
-    ...morning[0],
-    id: "75e",
-  },
-  {
-    ...morning[1],
-    id: "76e",
-  },
+  { ...morning[0], id: "75e" },
+  { ...morning[1], id: "76e" },
   {
     ...morning[2],
     id: "77e",
@@ -228,10 +186,7 @@ const evening: Entry[] = [
     id: "78e",
     text: "اللَّهُمَّ بِكَ أَمْسَيْنَا وَبِكَ أَصْبَحْنَا وَبِكَ نَحْيَا وَبِكَ نَمُوتُ وَإِلَيْكَ الْمَصِيرُ",
   },
-  {
-    ...morning[4],
-    id: "79e",
-  },
+  { ...morning[4], id: "79e" },
   {
     ...morning[5],
     id: "80e",
@@ -242,34 +197,13 @@ const evening: Entry[] = [
     id: "81e",
     text: "اللَّهُمَّ مَا أَمْسَى بِي مِنْ نِعْمَةٍ أَوْ بِأَحَدٍ مِنْ خَلْقِكَ، فَمِنْكَ وَحْدَكَ لَا شَرِيكَ لَكَ، فَلَكَ الْحَمْدُ وَلَكَ الشُّكْرُ",
   },
-  {
-    ...morning[7],
-    id: "82e",
-  },
-  {
-    ...morning[8],
-    id: "83e",
-  },
-  {
-    ...morning[9],
-    id: "84e",
-  },
-  {
-    ...morning[10],
-    id: "85e",
-  },
-  {
-    ...morning[11],
-    id: "86e",
-  },
-  {
-    ...morning[12],
-    id: "87e",
-  },
-  {
-    ...morning[13],
-    id: "88e",
-  },
+  { ...morning[7], id: "82e" },
+  { ...morning[8], id: "83e" },
+  { ...morning[9], id: "84e" },
+  { ...morning[10], id: "85e" },
+  { ...morning[11], id: "86e" },
+  { ...morning[12], id: "87e" },
+  { ...morning[13], id: "88e" },
   {
     ...morning[14],
     id: "89e",
@@ -280,30 +214,19 @@ const evening: Entry[] = [
     id: "90e",
     text: "أَمْسَيْنَا عَلَى فِطْرَةِ الْإِسْلَامِ، وَعَلَى كَلِمَةِ الْإِخْلَاصِ، وَعَلَى دِينِ نَبِيِّنَا مُحَمَّدٍ، وَعَلَى مِلَّةِ أَبِينَا إِبْرَاهِيمَ، حَنِيفًا مُسْلِمًا وَمَا كَانَ مِنَ الْمُشْرِكِينَ",
   },
-  {
-    ...morning[16],
-    id: "91e",
-  },
-  {
-    ...morning[17],
-    id: "92e",
-  },
+  { ...morning[16], id: "91e" },
+  { ...morning[17], id: "92e" },
   {
     id: "97",
     text: "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ",
     repetitions: 3,
     source: "حصن المسلم",
     reference: "Hisn al-Muslim 97 — ثلاث مرات إذا أمسى",
-    virtue:
-      "من قاله ثلاث مرات حين يمسي حُفظ من هوامّ تلك الليلة.",
   },
-  {
-    ...morning[21],
-    id: "98e",
-  },
+  { ...morning[21], id: "98e" },
 ];
 
-function toDhikr(type: AzkarType, items: Entry[]): AppDhikr[] {
+function toDhikr(type: AzkarType, items: Entry[]): Dhikr[] {
   return items.map((item, index) => ({
     id: `${type}-${item.id}`,
     type,
@@ -311,15 +234,14 @@ function toDhikr(type: AzkarType, items: Entry[]): AppDhikr[] {
     text: item.text,
     repetitions: item.repetitions,
     source: `${item.source} — ${item.reference}`,
-    virtue: item.virtue,
   }));
 }
 
-export const adhkar: Record<AzkarType, AppDhikr[]> = {
+export const adhkar: Record<AzkarType, Dhikr[]> = {
   morning: toDhikr("morning", morning),
   evening: toDhikr("evening", evening),
 };
 
-export function getAdhkar(type: AzkarType): AppDhikr[] {
+export function getAdhkar(type: AzkarType) {
   return adhkar[type];
 }
