@@ -71,6 +71,7 @@ export default async function AzkarList({
       : firstIncompleteIndex;
 
   const hasProgress = completedCount > 0;
+
   const isComplete =
     completedCount === items.length &&
     items.length > 0;
@@ -240,10 +241,12 @@ export default async function AzkarList({
                           : "غير مكتمل"}
                       </span>
 
-                      <ArrowRight
-                        size={17}
+                      <span
                         className="shrink-0 text-[var(--muted)] transition-transform duration-200 group-hover:-translate-x-1"
-                      />
+                        aria-hidden="true"
+                      >
+                        <ArrowRight size={17} />
+                      </span>
                     </div>
 
                     <p className="line-clamp-2 text-[16px] leading-8">
