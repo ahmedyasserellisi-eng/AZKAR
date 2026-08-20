@@ -18,10 +18,7 @@ export default async function AzkarList({
 }) {
   const { type } = await params;
 
-  if (
-    type !== "morning" &&
-    type !== "evening"
-  ) {
+  if (type !== "morning" && type !== "evening") {
     notFound();
   }
 
@@ -47,23 +44,24 @@ export default async function AzkarList({
 
   const completedCount = items.filter(
     (item) =>
-      (progress[item.id] ?? 0) >=
-      item.repetitions
+      (progress[item.id] ?? 0) >= item.repetitions
   ).length;
 
   const progressPercent =
     items.length > 0
-      ? Math.round(
-          (completedCount / items.length) * 100
+      ? Math.min(
+          100,
+          Math.round(
+            (completedCount / items.length) * 100
+          )
         )
       : 0;
 
-  const firstIncompleteIndex =
-    items.findIndex(
-      (item) =>
-        (progress[item.id] ?? 0) <
-        item.repetitions
-    );
+  const firstIncompleteIndex = items.findIndex(
+    (item) =>
+      (progress[item.id] ?? 0) <
+      item.repetitions
+  );
 
   const resumeIndex =
     firstIncompleteIndex === -1
@@ -73,13 +71,13 @@ export default async function AzkarList({
   const hasProgress = completedCount > 0;
 
   const isComplete =
-    completedCount === items.length &&
-    items.length > 0;
+    items.length > 0 &&
+    completedCount === items.length;
 
   return (
     <div className="container-mobile pb-10 pt-8 sm:pt-12">
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between gap-4">
+      <header className="mb-8 flex items-center justify-between gap-4">
         <Link
           href="/"
           className="focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border text-[var(--muted)] transition hover:bg-[var(--surface-soft)]"
@@ -92,7 +90,7 @@ export default async function AzkarList({
         </Link>
 
         <div className="min-w-0 text-center">
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-2xl font-bold tracking-tight">
             {title}
           </h1>
 
@@ -104,17 +102,17 @@ export default async function AzkarList({
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl soft text-[var(--primary)]">
           <Icon size={21} />
         </div>
-      </div>
+      </header>
 
-      {/* Progress */}
-      <section className="card mb-5 p-5">
-        <div className="mb-3 flex items-center justify-between">
+      {/* Progress Card */}
+      <section className="card mb-5 p-5 sm:p-6">
+        <div className="mb-4 flex items-end justify-between gap-4">
           <div>
             <p className="text-sm text-[var(--muted)]">
-              تقدمك
+              تقدمك في الورد
             </p>
 
-            <p className="mt-1 font-semibold">
+            <p className="mt-1 text-base font-semibold">
               <span dir="ltr">
                 {completedCount} / {items.length}
               </span>{" "}
@@ -123,14 +121,17 @@ export default async function AzkarList({
           </div>
 
           <span
-            className="text-sm font-semibold text-[var(--primary)]"
+            className="text-lg font-bold text-[var(--primary)]"
             dir="ltr"
           >
             {progressPercent}%
           </span>
         </div>
 
-        <div className="h-2 overflow-hidden rounded-full progress-track">
+        <div
+          className="h-2 overflow-hidden rounded-full progress-track"
+          aria-label="نسبة إكمال الورد"
+        >
           <div
             className="progress-fill h-full rounded-full transition-all duration-500"
             style={{
@@ -138,30 +139,40 @@ export default async function AzkarList({
             }}
           />
         </div>
+
+        <p className="mt-3 text-xs text-[var(--muted)]">
+          {isComplete
+            ? "أحسنت، أتممت الورد كاملًا."
+            : firstIncompleteIndex === -1
+            ? "يمكنك إعادة الورد من البداية."
+            : hasProgress
+            ? "يمكنك الاستكمال من حيث توقفت."
+            : "ابدأ وردك اليوم بخطوة واحدة."}
+        </p>
       </section>
 
-      {/* Main action */}
+      {/* Main Action */}
       <Link
         href={`/reading/${kind}?start=${resumeIndex}`}
-        className="focus-ring group mb-6 block rounded-3xl bg-[var(--primary)] p-5 text-white transition duration-200 hover:-translate-y-0.5 hover:opacity-95"
+        className="focus-ring group mb-7 block rounded-3xl bg-[var(--primary)] p-5 text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:opacity-95"
       >
         <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="text-lg font-semibold">
+          <div className="min-w-0">
+            <p className="text-lg font-semibold">
               {isComplete
                 ? "إعادة الورد"
                 : hasProgress
                 ? "استكمال الورد"
                 : "ابدأ الورد"}
-            </div>
+            </p>
 
-            <div className="mt-1 text-sm text-white/75">
+            <p className="mt-1 text-sm leading-6 text-white/75">
               {isComplete
-                ? "إعادة قراءة الأذكار من البداية"
+                ? "ابدأ من أول ذكر"
                 : hasProgress
-                ? "ابدأ من حيث توقفت"
+                ? "ابدأ من أول ذكر غير مكتمل"
                 : "اقرأ ذكرًا واحدًا في كل مرة"}
-            </div>
+            </p>
           </div>
 
           <div
@@ -173,20 +184,27 @@ export default async function AzkarList({
         </div>
       </Link>
 
-      {/* List */}
+      {/* List Header */}
       <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
-            قائمة الأذكار
-          </h2>
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">
+              قائمة الأذكار
+            </h2>
 
-          <span className="text-sm text-[var(--muted)]">
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              اختر ذكرًا للانتقال مباشرة إلى القراءة
+            </p>
+          </div>
+
+          <span className="shrink-0 text-sm text-[var(--muted)]">
             {items.length} ذكر
           </span>
         </div>
 
+        {/* List */}
         <div className="space-y-3">
-          {items.map((item) => {
+          {items.map((item, index) => {
             const completed = Math.min(
               progress[item.id] ?? 0,
               item.repetitions
@@ -195,25 +213,36 @@ export default async function AzkarList({
             const isItemComplete =
               completed >= item.repetitions;
 
+            const isCurrent =
+              index === firstIncompleteIndex;
+
             return (
               <Link
                 key={item.id}
                 href={`/reading/${kind}?start=${item.order - 1}`}
-                className="focus-ring group block rounded-3xl border p-4 transition duration-200 hover:-translate-y-0.5 hover:bg-[var(--surface-soft)]"
+                className={`focus-ring group block rounded-3xl border p-4 transition duration-200 hover:-translate-y-0.5 hover:bg-[var(--surface-soft)] ${
+                  isCurrent ? "shadow-sm" : ""
+                }`}
                 style={{
-                  borderColor: isItemComplete
+                  borderColor: isCurrent
                     ? "var(--primary)"
+                    : isItemComplete
+                    ? "color-mix(in srgb, var(--primary) 45%, var(--border))"
                     : "var(--border)",
-                  background: isItemComplete
+                  background: isCurrent
+                    ? "var(--surface-soft)"
+                    : isItemComplete
                     ? "var(--surface-soft)"
                     : "var(--surface)",
                 }}
               >
                 <div className="flex gap-4">
-                  {/* Number */}
+                  {/* Number / Complete */}
                   <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold ${
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold ${
                       isItemComplete
+                        ? "bg-[var(--primary)] text-white"
+                        : isCurrent
                         ? "bg-[var(--primary)] text-white"
                         : "soft text-[var(--primary)]"
                     }`}
@@ -229,17 +258,30 @@ export default async function AzkarList({
                   {/* Content */}
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex items-center justify-between gap-3">
-                      <span
-                        className={`text-xs ${
-                          isItemComplete
-                            ? "text-[var(--primary)]"
-                            : "text-[var(--muted)]"
-                        }`}
-                      >
-                        {isItemComplete
-                          ? "مكتمل"
-                          : "غير مكتمل"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-xs font-medium ${
+                            isItemComplete
+                              ? "text-[var(--primary)]"
+                              : isCurrent
+                              ? "text-[var(--primary)]"
+                              : "text-[var(--muted)]"
+                          }`}
+                        >
+                          {isItemComplete
+                            ? "مكتمل"
+                            : isCurrent
+                            ? "عليه الدور"
+                            : "غير مكتمل"}
+                        </span>
+
+                        {isCurrent && !isItemComplete && (
+                          <span
+                            className="h-1.5 w-1.5 rounded-full bg-[var(--primary)]"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </div>
 
                       <span
                         className="shrink-0 text-[var(--muted)] transition-transform duration-200 group-hover:-translate-x-1"
