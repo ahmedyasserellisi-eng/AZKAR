@@ -15,10 +15,12 @@ import {
   getFontScale,
   getProgress,
   setFavorites,
+  setFontScale,
   setProgress,
 } from "@/lib/storage";
 import type { AzkarType } from "@/lib/types";
 
+const MIN_SCALE = 0.9;
 const MAX_SCALE = 1.25;
 const STEP = 0.05;
 const BASE_FONT_SIZE = 23;
@@ -35,6 +37,7 @@ export default function ReadingPage() {
   );
 
   const requestedStart = Number(search.get("start"));
+
   const hasRequestedStart =
     Number.isInteger(requestedStart) &&
     requestedStart >= 0 &&
@@ -53,13 +56,14 @@ export default function ReadingPage() {
         currentItem.repetitions
     );
 
-    // لو كل الأذكار مكتملة، نعرض آخر ذكر.
     return firstIncompleteIndex === -1
       ? Math.max(items.length - 1, 0)
       : firstIncompleteIndex;
   });
 
+  // عدد المرات المنجزة فعليًا للذكر الحالي.
   const [count, setCount] = useState(0);
+
   const [favorites, setFavs] = useState<string[]>([]);
   const [scale, setScale] = useState(1);
   const [doneMessage, setDoneMessage] = useState(false);
@@ -130,6 +134,14 @@ export default function ReadingPage() {
     setFavorites(next);
   }
 
+  /**
+   * تسجيل ضغطة واحدة فقط.
+   *
+   * مثال:
+   * 0/3 → 1/3 → 2/3 → 3/3
+   *
+   * وبعد إتمام العدد المطلوب ينتقل للذكر التالي.
+   */
   function markDone() {
     const nextCount = Math.min(
       count + 1,
@@ -139,7 +151,6 @@ export default function ReadingPage() {
     const progress = getProgress();
 
     progress[item.id] = nextCount;
-
     setProgress(progress);
 
     if (nextCount < item.repetitions) {
@@ -148,47 +159,88 @@ export default function ReadingPage() {
     }
 
     if (index === items.length - 1) {
+      setCount(nextCount);
       setDoneMessage(true);
       return;
     }
 
-    // الانتقال للذكر التالي بعد إتمام التكرارات المطلوبة.
     setIndex(index + 1);
     setCount(0);
     setShowVirtue(false);
   }
 
+  /**
+   * الرجوع للذكر السابق.
+   */
   function previous() {
-    if (index > 0) {
-      const previousIndex = index - 1;
+    if (index === 0) return;
 
-      setIndex(previousIndex);
+    const previousIndex = index - 1;
+    const previousItem = items[previousIndex];
+    const progress = getProgress();
 
-      const previousItem = items[previousIndex];
-      const progress = getProgress();
+    setIndex(previousIndex);
 
-      setCount(
-        Math.min(
-          progress[previousItem.id] ?? 0,
-          previousItem.repetitions
-        )
-      );
+    setCount(
+      Math.min(
+        progress[previousItem.id] ?? 0,
+        previousItem.repetitions
+      )
+    );
 
-      setShowVirtue(false);
-    }
+    setShowVirtue(false);
   }
 
   /**
-   * تكبير مؤقت أثناء القراءة فقط.
-   * لا يغيّر الحجم المحفوظ في الإعدادات.
+   * الانتقال للذكر التالي بدون تسجيله كمكتمل.
    */
-  function increaseFont() {
-    setScale((current) =>
+  function next() {
+    if (index >= items.length - 1) return;
+
+    const nextIndex = index + 1;
+    const nextItem = items[nextIndex];
+    const progress = getProgress();
+
+    setIndex(nextIndex);
+
+    setCount(
       Math.min(
-        MAX_SCALE,
-        Number((current + STEP).toFixed(2))
+        progress[nextItem.id] ?? 0,
+        nextItem.repetitions
       )
     );
+
+    setShowVirtue(false);
+  }
+
+  /**
+   * تكبير مؤقت أثناء القراءة.
+   * لا يغير قيمة الإعدادات المحفوظة.
+   */
+  function increaseFont() {
+    setScale((current) => {
+      const next = Math.min(
+        MAX_SCALE,
+        Number((current + STEP).toFixed(2))
+      );
+
+      return next;
+    });
+  }
+
+  /**
+   * تصغير مؤقت أثناء القراءة.
+   * لا يغير قيمة الإعدادات المحفوظة.
+   */
+  function decreaseFont() {
+    setScale((current) => {
+      const next = Math.max(
+        MIN_SCALE,
+        Number((current - STEP).toFixed(2))
+      );
+
+      return next;
+    });
   }
 
   function restartReading() {
@@ -199,63 +251,19 @@ export default function ReadingPage() {
     setScale(getFontScale());
   }
 
-  const readingFontSize = BASE_FONT_SIZE * scale;
+  const readingFontSize =
+    BASE_FONT_SIZE * scale;
+
   const canIncreaseFont = scale < MAX_SCALE;
+  const canDecreaseFont = scale > MIN_SCALE;
 
-  // نعرض التكرار الحالي بشكل صحيح،
-  // ولا نسمح بظهور رقم أكبر من المطلوب.
-  const displayedCount = Math.min(
-    count + 1,
-    item.repetitions
-  );
-
-  if (doneMessage) {
-    return (
-      <div className="container-mobile flex min-h-[80vh] flex-col items-center justify-center text-center">
-        <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-lg shadow-black/10">
-          <CheckIcon size={34} />
-        </div>
-
-        <p className="mb-2 text-sm text-[var(--muted)]">
-          ما شاء الله 🤍
-        </p>
-
-        <h1 className="text-3xl font-bold leading-tight">
-          أتممت أذكار{" "}
-          {type === "morning"
-            ? "الصباح"
-            : "المساء"}
-        </h1>
-
-        <p className="mt-3 max-w-sm leading-8 text-[var(--muted)]">
-          الحمد لله الذي أعانك على ذكره.
-        </p>
-
-        <div className="mt-7 flex w-full max-w-sm gap-3">
-          <Link
-            href="/"
-            className="focus-ring flex-1 rounded-2xl border px-4 py-3 text-center transition hover:bg-[var(--surface-soft)]"
-            style={{
-              borderColor: "var(--border)",
-            }}
-          >
-            الرئيسية
-          </Link>
-
-          <button
-            onClick={restartReading}
-            className="focus-ring flex-1 rounded-2xl bg-[var(--primary)] px-4 py-3 font-semibold text-white transition hover:opacity-95"
-          >
-            مرة أخرى
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const isFirst = index === 0;
+  const isLast = index === items.length - 1;
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <div className="container-mobile pb-8 pt-5">
+
         {/* Header */}
         <div className="mb-5 flex items-center justify-between">
           <button
@@ -282,23 +290,37 @@ export default function ReadingPage() {
             </div>
           </div>
 
-          {/* تكبير مؤقت */}
-          <button
-            onClick={increaseFont}
-            disabled={!canIncreaseFont}
-            className="focus-ring rounded-2xl border px-3 py-2 text-sm transition disabled:cursor-not-allowed disabled:opacity-40"
-            style={{
-              borderColor: "var(--border)",
-            }}
-            aria-label="تكبير النص أثناء القراءة"
-          >
-            A+
-          </button>
+          {/* Font controls */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={decreaseFont}
+              disabled={!canDecreaseFont}
+              className="focus-ring flex h-10 w-10 items-center justify-center rounded-xl border text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-30"
+              style={{
+                borderColor: "var(--border)",
+              }}
+              aria-label="تصغير النص"
+            >
+              A−
+            </button>
+
+            <button
+              onClick={increaseFont}
+              disabled={!canIncreaseFont}
+              className="focus-ring flex h-10 w-10 items-center justify-center rounded-xl border text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-30"
+              style={{
+                borderColor: "var(--border)",
+              }}
+              aria-label="تكبير النص"
+            >
+              A+
+            </button>
+          </div>
         </div>
 
         {/* Progress */}
         <div
-          className="mb-8 h-1.5 overflow-hidden rounded-full progress-track"
+          className="mb-6 h-1.5 overflow-hidden rounded-full progress-track"
           aria-label="التقدم"
         >
           <div
@@ -309,14 +331,15 @@ export default function ReadingPage() {
           />
         </div>
 
-        {/* Dhikr Card */}
-        <article className="card min-h-[58vh] p-6 sm:p-10">
+        {/* Reading Card */}
+        <article className="card overflow-hidden p-5 sm:p-8">
+
           {/* Meta */}
-          <div className="mb-8 flex items-center justify-between">
-            <span className="rounded-full soft px-3 py-1 text-xs text-[var(--muted)]">
+          <div className="mb-5 flex h-10 items-center justify-between">
+            <span className="rounded-full soft px-3 py-1.5 text-xs text-[var(--muted)]">
               التكرار{" "}
               <span dir="ltr">
-                {displayedCount} / {item.repetitions}
+                {count} / {item.repetitions}
               </span>
             </span>
 
@@ -336,19 +359,23 @@ export default function ReadingPage() {
             </button>
           </div>
 
-          {/* Main Text */}
-          <p
-            style={{
-              fontSize: `${readingFontSize}px`,
-            }}
-            className="whitespace-pre-line leading-[2.25] tracking-[0.01em]"
-          >
-            {item.text}
-          </p>
+          {/* ثابت الحجم والمكان */}
+          <div className="flex h-[48vh] min-h-[360px] max-h-[520px] items-start overflow-y-auto rounded-2xl px-1">
+            <div className="flex min-h-full w-full items-center">
+              <p
+                style={{
+                  fontSize: `${readingFontSize}px`,
+                }}
+                className="w-full whitespace-pre-line text-center leading-[2.25] tracking-[0.01em]"
+              >
+                {item.text}
+              </p>
+            </div>
+          </div>
 
           {/* Source + Virtue */}
           <div
-            className="mt-10 border-t pt-5"
+            className="mt-5 border-t pt-5"
             style={{
               borderColor: "var(--border)",
             }}
@@ -406,8 +433,10 @@ export default function ReadingPage() {
                     id="dhikr-virtue"
                     className="mt-2 rounded-2xl border p-4"
                     style={{
-                      borderColor: "var(--border)",
-                      background: "var(--surface)",
+                      borderColor:
+                        "var(--border)",
+                      background:
+                        "var(--surface)",
                     }}
                   >
                     <p className="text-sm leading-7 text-[var(--muted)]">
@@ -429,46 +458,96 @@ export default function ReadingPage() {
           </div>
         </article>
 
-        {/* Navigation */}
-        <div className="mt-5 flex items-center justify-between gap-3">
-          {/* Previous */}
+        {/* Bottom navigation */}
+        <div className="mt-5 grid grid-cols-[auto_1fr_auto] items-center gap-3">
+
+          {/* < السابق */}
           <button
+            type="button"
             onClick={previous}
-            disabled={index === 0}
-            className="focus-ring rounded-2xl border p-4 text-[var(--muted)] transition hover:bg-[var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-30"
+            disabled={isFirst}
+            className="focus-ring flex h-14 min-w-[104px] items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-semibold text-[var(--muted)] transition hover:bg-[var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-30"
             style={{
               borderColor: "var(--border)",
             }}
-            aria-label="السابق"
+            aria-label="الذكر السابق"
           >
-            <ArrowRight />
+            <ArrowLeft size={19} />
+            <span>السابق</span>
           </button>
 
-          {/* Done / Next */}
+          {/* تم */}
           <button
+            type="button"
             onClick={markDone}
-            className="focus-ring flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[var(--primary)] px-5 py-4 font-semibold text-white shadow-lg shadow-black/5 transition hover:opacity-95 active:scale-[0.99]"
+            className="focus-ring flex h-14 items-center justify-center gap-2 rounded-2xl bg-[var(--primary)] px-5 font-semibold text-white shadow-lg shadow-black/5 transition hover:opacity-95 active:scale-[0.99]"
           >
             <CheckIcon />
 
-            {count + 1 >= item.repetitions
-              ? "تم"
-              : "تم — التالي"}
+            <span>تم</span>
           </button>
 
-          {/* List */}
-          <Link
-            href={`/azkar/${type}`}
-            className="focus-ring rounded-2xl border p-4 text-[var(--muted)] transition hover:bg-[var(--surface-soft)]"
+          {/* التالي > */}
+          <button
+            type="button"
+            onClick={next}
+            disabled={isLast}
+            className="focus-ring flex h-14 min-w-[104px] items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-semibold text-[var(--muted)] transition hover:bg-[var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-30"
             style={{
               borderColor: "var(--border)",
             }}
-            aria-label="قائمة الأذكار"
+            aria-label="الذكر التالي"
           >
-            <ArrowLeft />
-          </Link>
+            <span>التالي</span>
+            <ArrowRight size={19} />
+          </button>
         </div>
       </div>
+
+      {/* Completion Screen */}
+      {doneMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--background)]/95 px-5 backdrop-blur-sm">
+          <div className="w-full max-w-sm text-center">
+            <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-lg shadow-black/10">
+              <CheckIcon size={34} />
+            </div>
+
+            <p className="mb-2 text-sm text-[var(--muted)]">
+              ما شاء الله 🤍
+            </p>
+
+            <h1 className="text-3xl font-bold leading-tight">
+              أتممت أذكار{" "}
+              {type === "morning"
+                ? "الصباح"
+                : "المساء"}
+            </h1>
+
+            <p className="mt-3 leading-8 text-[var(--muted)]">
+              الحمد لله الذي أعانك على ذكره.
+            </p>
+
+            <div className="mt-7 flex gap-3">
+              <Link
+                href="/"
+                className="focus-ring flex-1 rounded-2xl border px-4 py-3 text-center transition hover:bg-[var(--surface-soft)]"
+                style={{
+                  borderColor: "var(--border)",
+                }}
+              >
+                الرئيسية
+              </Link>
+
+              <button
+                onClick={restartReading}
+                className="focus-ring flex-1 rounded-2xl bg-[var(--primary)] px-4 py-3 font-semibold text-white transition hover:opacity-95"
+              >
+                مرة أخرى
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
