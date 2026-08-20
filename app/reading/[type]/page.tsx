@@ -34,15 +34,31 @@ export default function ReadingPage() {
     type === "evening" ? "evening" : "morning"
   );
 
-  const initial = Math.max(
-    0,
-    Math.min(
-      items.length - 1,
-      Number(search.get("start") ?? 0)
-    )
-  );
+  const requestedStart = Number(search.get("start"));
+  const hasRequestedStart =
+    Number.isInteger(requestedStart) &&
+    requestedStart >= 0 &&
+    requestedStart < items.length;
 
-  const [index, setIndex] = useState(initial);
+  const [index, setIndex] = useState(() => {
+    if (hasRequestedStart) {
+      return requestedStart;
+    }
+
+    const progress = getProgress();
+
+    const firstIncompleteIndex = items.findIndex(
+      (currentItem) =>
+        (progress[currentItem.id] ?? 0) <
+        currentItem.repetitions
+    );
+
+    // لو كل الأذكار مكتملة، نعرض آخر ذكر.
+    return firstIncompleteIndex === -1
+      ? Math.max(items.length - 1, 0)
+      : firstIncompleteIndex;
+  });
+
   const [count, setCount] = useState(0);
   const [favorites, setFavs] = useState<string[]>([]);
   const [scale, setScale] = useState(1);
@@ -77,24 +93,30 @@ export default function ReadingPage() {
 
   const percent =
     totalUnits > 0
-      ? Math.round((completedUnits / totalUnits) * 100)
+      ? Math.min(
+          100,
+          Math.round(
+            (completedUnits / totalUnits) * 100
+          )
+        )
       : 0;
 
   useEffect(() => {
+    if (!item) return;
+
     const savedScale = getFontScale();
+    const progress = getProgress();
 
     setFavs(getFavorites());
     setScale(savedScale);
     setShowVirtue(false);
 
-    const progress = getProgress();
-
-    setCount(
-      Math.min(
-        progress[item.id] ?? 0,
-        item.repetitions
-      )
+    const completed = Math.min(
+      progress[item.id] ?? 0,
+      item.repetitions
     );
+
+    setCount(completed);
   }, [item]);
 
   if (!item) return null;
@@ -109,13 +131,14 @@ export default function ReadingPage() {
   }
 
   function markDone() {
-    const nextCount = count + 1;
-    const progress = getProgress();
-
-    progress[item.id] = Math.min(
-      nextCount,
+    const nextCount = Math.min(
+      count + 1,
       item.repetitions
     );
+
+    const progress = getProgress();
+
+    progress[item.id] = nextCount;
 
     setProgress(progress);
 
@@ -129,13 +152,29 @@ export default function ReadingPage() {
       return;
     }
 
+    // الانتقال للذكر التالي بعد إتمام التكرارات المطلوبة.
     setIndex(index + 1);
     setCount(0);
+    setShowVirtue(false);
   }
 
   function previous() {
     if (index > 0) {
-      setIndex(index - 1);
+      const previousIndex = index - 1;
+
+      setIndex(previousIndex);
+
+      const previousItem = items[previousIndex];
+      const progress = getProgress();
+
+      setCount(
+        Math.min(
+          progress[previousItem.id] ?? 0,
+          previousItem.repetitions
+        )
+      );
+
+      setShowVirtue(false);
     }
   }
 
@@ -152,13 +191,28 @@ export default function ReadingPage() {
     );
   }
 
+  function restartReading() {
+    setIndex(0);
+    setDoneMessage(false);
+    setCount(0);
+    setShowVirtue(false);
+    setScale(getFontScale());
+  }
+
   const readingFontSize = BASE_FONT_SIZE * scale;
   const canIncreaseFont = scale < MAX_SCALE;
+
+  // نعرض التكرار الحالي بشكل صحيح،
+  // ولا نسمح بظهور رقم أكبر من المطلوب.
+  const displayedCount = Math.min(
+    count + 1,
+    item.repetitions
+  );
 
   if (doneMessage) {
     return (
       <div className="container-mobile flex min-h-[80vh] flex-col items-center justify-center text-center">
-        <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--primary)] text-white">
+        <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-lg shadow-black/10">
           <CheckIcon size={34} />
         </div>
 
@@ -166,7 +220,7 @@ export default function ReadingPage() {
           ما شاء الله 🤍
         </p>
 
-        <h1 className="text-3xl font-bold">
+        <h1 className="text-3xl font-bold leading-tight">
           أتممت أذكار{" "}
           {type === "morning"
             ? "الصباح"
@@ -180,21 +234,17 @@ export default function ReadingPage() {
         <div className="mt-7 flex w-full max-w-sm gap-3">
           <Link
             href="/"
-            className="focus-ring flex-1 rounded-2xl border px-4 py-3 text-center"
-            style={{ borderColor: "var(--border)" }}
+            className="focus-ring flex-1 rounded-2xl border px-4 py-3 text-center transition hover:bg-[var(--surface-soft)]"
+            style={{
+              borderColor: "var(--border)",
+            }}
           >
             الرئيسية
           </Link>
 
           <button
-            onClick={() => {
-              setIndex(0);
-              setDoneMessage(false);
-              setCount(0);
-              setShowVirtue(false);
-              setScale(getFontScale());
-            }}
-            className="focus-ring flex-1 rounded-2xl bg-[var(--primary)] px-4 py-3 font-semibold text-white"
+            onClick={restartReading}
+            className="focus-ring flex-1 rounded-2xl bg-[var(--primary)] px-4 py-3 font-semibold text-white transition hover:opacity-95"
           >
             مرة أخرى
           </button>
@@ -205,12 +255,12 @@ export default function ReadingPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <div className="container-mobile pt-5">
+      <div className="container-mobile pb-8 pt-5">
         {/* Header */}
         <div className="mb-5 flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="focus-ring rounded-2xl p-2 text-[var(--muted)]"
+            className="focus-ring rounded-2xl p-2 text-[var(--muted)] transition hover:bg-[var(--surface-soft)]"
             aria-label="رجوع"
           >
             <ArrowLeft />
@@ -232,11 +282,11 @@ export default function ReadingPage() {
             </div>
           </div>
 
-          {/* تكبير مؤقت أثناء القراءة فقط */}
+          {/* تكبير مؤقت */}
           <button
             onClick={increaseFont}
             disabled={!canIncreaseFont}
-            className="focus-ring rounded-2xl border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+            className="focus-ring rounded-2xl border px-3 py-2 text-sm transition disabled:cursor-not-allowed disabled:opacity-40"
             style={{
               borderColor: "var(--border)",
             }}
@@ -247,28 +297,32 @@ export default function ReadingPage() {
         </div>
 
         {/* Progress */}
-        <div className="mb-8 h-1.5 overflow-hidden rounded-full progress-track">
+        <div
+          className="mb-8 h-1.5 overflow-hidden rounded-full progress-track"
+          aria-label="التقدم"
+        >
           <div
-            className="progress-fill h-full rounded-full transition-all duration-300"
+            className="progress-fill h-full rounded-full transition-all duration-500"
             style={{
               width: `${percent}%`,
             }}
           />
         </div>
 
-        {/* Dhikr */}
+        {/* Dhikr Card */}
         <article className="card min-h-[58vh] p-6 sm:p-10">
+          {/* Meta */}
           <div className="mb-8 flex items-center justify-between">
             <span className="rounded-full soft px-3 py-1 text-xs text-[var(--muted)]">
               التكرار{" "}
               <span dir="ltr">
-                {count + 1} / {item.repetitions}
+                {displayedCount} / {item.repetitions}
               </span>
             </span>
 
             <button
               onClick={toggleFavorite}
-              className={`focus-ring rounded-full p-2 ${
+              className={`focus-ring rounded-full p-2 transition ${
                 favorites.includes(item.id)
                   ? "text-[var(--primary)]"
                   : "text-[var(--muted)]"
@@ -282,12 +336,12 @@ export default function ReadingPage() {
             </button>
           </div>
 
-          {/* Main Dhikr */}
+          {/* Main Text */}
           <p
             style={{
               fontSize: `${readingFontSize}px`,
             }}
-            className="leading-[2.25] tracking-[0.01em]"
+            className="whitespace-pre-line leading-[2.25] tracking-[0.01em]"
           >
             {item.text}
           </p>
@@ -299,7 +353,6 @@ export default function ReadingPage() {
               borderColor: "var(--border)",
             }}
           >
-            {/* Source */}
             <div className="text-sm leading-7 text-[var(--muted)]">
               <span className="font-semibold text-[var(--foreground)]">
                 المصدر:
@@ -307,7 +360,6 @@ export default function ReadingPage() {
               {item.source}
             </div>
 
-            {/* Virtue */}
             {item.virtue && (
               <div className="mt-4">
                 <button
@@ -317,7 +369,7 @@ export default function ReadingPage() {
                       (current) => !current
                     )
                   }
-                  className="focus-ring flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-right transition"
+                  className="focus-ring flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-right transition hover:bg-[var(--surface-soft)]"
                   style={{
                     borderColor: "var(--border)",
                     background:
@@ -377,12 +429,13 @@ export default function ReadingPage() {
           </div>
         </article>
 
-        {/* Controls */}
+        {/* Navigation */}
         <div className="mt-5 flex items-center justify-between gap-3">
+          {/* Previous */}
           <button
             onClick={previous}
             disabled={index === 0}
-            className="focus-ring rounded-2xl border p-4 text-[var(--muted)] disabled:opacity-35"
+            className="focus-ring rounded-2xl border p-4 text-[var(--muted)] transition hover:bg-[var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-30"
             style={{
               borderColor: "var(--border)",
             }}
@@ -391,9 +444,10 @@ export default function ReadingPage() {
             <ArrowRight />
           </button>
 
+          {/* Done / Next */}
           <button
             onClick={markDone}
-            className="focus-ring flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[var(--primary)] px-5 py-4 font-semibold text-white shadow-lg shadow-black/5"
+            className="focus-ring flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[var(--primary)] px-5 py-4 font-semibold text-white shadow-lg shadow-black/5 transition hover:opacity-95 active:scale-[0.99]"
           >
             <CheckIcon />
 
@@ -402,9 +456,10 @@ export default function ReadingPage() {
               : "تم — التالي"}
           </button>
 
+          {/* List */}
           <Link
             href={`/azkar/${type}`}
-            className="focus-ring rounded-2xl border p-4 text-[var(--muted)]"
+            className="focus-ring rounded-2xl border p-4 text-[var(--muted)] transition hover:bg-[var(--surface-soft)]"
             style={{
               borderColor: "var(--border)",
             }}
