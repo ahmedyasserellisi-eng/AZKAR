@@ -53,7 +53,6 @@ export default function ReadingPage() {
         currentItem.repetitions
     );
 
-    // لو كل الأذكار مكتملة، نعرض آخر ذكر.
     return firstIncompleteIndex === -1
       ? Math.max(items.length - 1, 0)
       : firstIncompleteIndex;
@@ -152,30 +151,47 @@ export default function ReadingPage() {
       return;
     }
 
-    // الانتقال للذكر التالي بعد إتمام التكرارات المطلوبة.
     setIndex(index + 1);
     setCount(0);
     setShowVirtue(false);
   }
 
   function previous() {
-    if (index > 0) {
-      const previousIndex = index - 1;
+    if (index === 0) return;
 
-      setIndex(previousIndex);
+    const previousIndex = index - 1;
+    const previousItem = items[previousIndex];
+    const progress = getProgress();
 
-      const previousItem = items[previousIndex];
-      const progress = getProgress();
+    setIndex(previousIndex);
 
-      setCount(
-        Math.min(
-          progress[previousItem.id] ?? 0,
-          previousItem.repetitions
-        )
-      );
+    setCount(
+      Math.min(
+        progress[previousItem.id] ?? 0,
+        previousItem.repetitions
+      )
+    );
 
-      setShowVirtue(false);
-    }
+    setShowVirtue(false);
+  }
+
+  function next() {
+    if (index >= items.length - 1) return;
+
+    const nextIndex = index + 1;
+    const nextItem = items[nextIndex];
+    const progress = getProgress();
+
+    setIndex(nextIndex);
+
+    setCount(
+      Math.min(
+        progress[nextItem.id] ?? 0,
+        nextItem.repetitions
+      )
+    );
+
+    setShowVirtue(false);
   }
 
   /**
@@ -202,12 +218,13 @@ export default function ReadingPage() {
   const readingFontSize = BASE_FONT_SIZE * scale;
   const canIncreaseFont = scale < MAX_SCALE;
 
-  // نعرض التكرار الحالي بشكل صحيح،
-  // ولا نسمح بظهور رقم أكبر من المطلوب.
   const displayedCount = Math.min(
     count + 1,
     item.repetitions
   );
+
+  const isFirst = index === 0;
+  const isLast = index === items.length - 1;
 
   if (doneMessage) {
     return (
@@ -429,25 +446,27 @@ export default function ReadingPage() {
           </div>
         </article>
 
-        {/* Navigation */}
-        <div className="mt-5 flex items-center justify-between gap-3">
-          {/* Previous */}
+        {/* Bottom Navigation */}
+        <div className="mt-5 grid grid-cols-[auto_1fr_auto] items-center gap-3">
+          {/* السابق - يسار */}
           <button
+            type="button"
             onClick={previous}
-            disabled={index === 0}
-            className="focus-ring rounded-2xl border p-4 text-[var(--muted)] transition hover:bg-[var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-30"
+            disabled={isFirst}
+            className="focus-ring flex h-14 w-14 items-center justify-center rounded-2xl border text-[var(--muted)] transition hover:bg-[var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-30"
             style={{
               borderColor: "var(--border)",
             }}
-            aria-label="السابق"
+            aria-label="الذكر السابق"
           >
-            <ArrowRight />
+            <ArrowRight size={21} />
           </button>
 
-          {/* Done / Next */}
+          {/* تم */}
           <button
+            type="button"
             onClick={markDone}
-            className="focus-ring flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[var(--primary)] px-5 py-4 font-semibold text-white shadow-lg shadow-black/5 transition hover:opacity-95 active:scale-[0.99]"
+            className="focus-ring flex h-14 items-center justify-center gap-2 rounded-2xl bg-[var(--primary)] px-5 font-semibold text-white shadow-lg shadow-black/5 transition hover:opacity-95 active:scale-[0.99]"
           >
             <CheckIcon />
 
@@ -456,17 +475,19 @@ export default function ReadingPage() {
               : "تم — التالي"}
           </button>
 
-          {/* List */}
-          <Link
-            href={`/azkar/${type}`}
-            className="focus-ring rounded-2xl border p-4 text-[var(--muted)] transition hover:bg-[var(--surface-soft)]"
+          {/* التالي - يمين */}
+          <button
+            type="button"
+            onClick={next}
+            disabled={isLast}
+            className="focus-ring flex h-14 w-14 items-center justify-center rounded-2xl border text-[var(--muted)] transition hover:bg-[var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-30"
             style={{
               borderColor: "var(--border)",
             }}
-            aria-label="قائمة الأذكار"
+            aria-label="الذكر التالي"
           >
-            <ArrowLeft />
-          </Link>
+            <ArrowLeft size={21} />
+          </button>
         </div>
       </div>
     </div>
