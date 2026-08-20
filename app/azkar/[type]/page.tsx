@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -9,21 +12,76 @@ import {
 } from "../../components/Icons";
 import { getAdhkar } from "@/lib/adhkar";
 import { getProgress } from "@/lib/storage";
-import type { AzkarType } from "@/lib/types";
+import type { AzkarType, ProgressState } from "@/lib/types";
 
-export default async function AzkarList({
-  params,
-}: {
-  params: Promise<{ type: string }>;
-}) {
-  const { type } = await params;
+export default function AzkarList() {
+  const params = useParams<{ type: string }>();
+  const router = useRouter();
 
-  if (type !== "morning" && type !== "evening") {
-    notFound();
+  const rawType = params?.type;
+
+  const kind: AzkarType | null =
+    rawType === "morning" || rawType === "evening"
+      ? rawType
+      : null;
+
+  const [progress, setProgressState] =
+    useState<ProgressState>({});
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (!kind) {
+      router.replace("/");
+      return;
+    }
+
+    const loadProgress = () => {
+      setProgressState(getProgress());
+    };
+
+    loadProgress();
+    setMounted(true);
+
+    const handleFocus = () => {
+      loadProgress();
+    };
+
+    const handleStorage = () => {
+      loadProgress();
+    };
+
+    window.addEventListener(
+      "focus",
+      handleFocus
+    );
+
+    window.addEventListener(
+      "storage",
+      handleStorage
+    );
+
+    return () => {
+      window.removeEventListener(
+        "focus",
+        handleFocus
+      );
+
+      window.removeEventListener(
+        "storage",
+        handleStorage
+      );
+    };
+  }, [kind, router]);
+
+  const items = useMemo(
+    () => (kind ? getAdhkar(kind) : []),
+    [kind]
+  );
+
+  if (!kind) {
+    return null;
   }
-
-  const kind = type as AzkarType;
-  const items = getAdhkar(kind);
 
   const title =
     kind === "morning"
@@ -40,12 +98,17 @@ export default async function AzkarList({
       ? SunIcon
       : MoonIcon;
 
-  const progress = getProgress();
-
-  const completedCount = items.filter(
-    (item) =>
-      (progress[item.id] ?? 0) >= item.repetitions
-  ).length;
+  /**
+   * لا نحسب الـProgress قبل تحميل localStorage
+   * حتى لا يظهر رقم خاطئ لحظة فتح الصفحة.
+   */
+  const completedCount = mounted
+    ? items.filter(
+        (item) =>
+          (progress[item.id] ?? 0) >=
+          item.repetitions
+      ).length
+    : 0;
 
   const progressPercent =
     items.length > 0
@@ -57,20 +120,27 @@ export default async function AzkarList({
         )
       : 0;
 
-  const firstIncompleteIndex = items.findIndex(
-    (item) =>
-      (progress[item.id] ?? 0) <
-      item.repetitions
-  );
+  /**
+   * أول ذكر لم يكتمل بعد.
+   */
+  const firstIncompleteIndex = mounted
+    ? items.findIndex(
+        (item) =>
+          (progress[item.id] ?? 0) <
+          item.repetitions
+      )
+    : 0;
 
   const resumeIndex =
     firstIncompleteIndex === -1
       ? 0
       : firstIncompleteIndex;
 
-  const hasProgress = completedCount > 0;
+  const hasProgress =
+    mounted && completedCount > 0;
 
   const isComplete =
+    mounted &&
     items.length > 0 &&
     completedCount === items.length;
 
@@ -141,10 +211,10 @@ export default async function AzkarList({
         </div>
 
         <p className="mt-3 text-xs text-[var(--muted)]">
-          {isComplete
+          {!mounted
+            ? "جاري تحميل تقدمك..."
+            : isComplete
             ? "أحسنت، أتممت الورد كاملًا."
-            : firstIncompleteIndex === -1
-            ? "يمكنك إعادة الورد من البداية."
             : hasProgress
             ? "يمكنك الاستكمال من حيث توقفت."
             : "ابدأ وردك اليوم بخطوة واحدة."}
@@ -211,9 +281,12 @@ export default async function AzkarList({
             );
 
             const isItemComplete =
+              mounted &&
               completed >= item.repetitions;
 
             const isCurrent =
+              mounted &&
+              firstIncompleteIndex !== -1 &&
               index === firstIncompleteIndex;
 
             return (
@@ -227,13 +300,12 @@ export default async function AzkarList({
                   borderColor: isCurrent
                     ? "var(--primary)"
                     : isItemComplete
-                    ? "color-mix(in srgb, var(--primary) 45%, var(--border))"
+                    ? "var(--primary)"
                     : "var(--border)",
-                  background: isCurrent
-                    ? "var(--surface-soft)"
-                    : isItemComplete
-                    ? "var(--surface-soft)"
-                    : "var(--surface)",
+                  background:
+                    isCurrent || isItemComplete
+                      ? "var(--surface-soft)"
+                      : "var(--surface)",
                 }}
               >
                 <div className="flex gap-4">
@@ -275,14 +347,16 @@ export default async function AzkarList({
                             : "غير مكتمل"}
                         </span>
 
-                        {isCurrent && !isItemComplete && (
-                          <span
-                            className="h-1.5 w-1.5 rounded-full bg-[var(--primary)]"
-                            aria-hidden="true"
-                          />
-                        )}
+                        {isCurrent &&
+                          !isItemComplete && (
+                            <span
+                              className="h-1.5 w-1.5 rounded-full bg-[var(--primary)]"
+                              aria-hidden="true"
+                            />
+                          )}
                       </div>
 
+                      {/* السهم كما هو — لم يتم تغييره */}
                       <span
                         className="shrink-0 text-[var(--muted)] transition-transform duration-200 group-hover:-translate-x-1"
                         aria-hidden="true"
